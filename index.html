@@ -1,0 +1,1809 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 4: Sorting – DASTRUC Reviewer</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+/* ===== TOKENS ===== */
+:root {
+  --navy:        #0d1b3e;
+  --navy-mid:    #1a2f5e;
+  --navy-light:  #243a6e;
+  --gold:        #c9a84c;
+  --gold-light:  #e8b84b;
+  --gold-pale:   #fdf6e3;
+  --white:       #ffffff;
+  --bg:          #f5f4f0;
+  --card:        #ffffff;
+  --text:        #1a1a2e;
+  --muted:       #6b7a99;
+  --border:      rgba(201,168,76,0.22);
+  --shadow:      0 4px 28px rgba(13,27,62,0.1);
+  --code-bg:     #0a1628;
+  --transition:  0.3s ease;
+}
+
+[data-theme="dark"] {
+  --bg:        #070d1f;
+  --card:      #0d1b3e;
+  --text:      #e8eaf2;
+  --muted:     #8a9bb8;
+  --border:    rgba(201,168,76,0.25);
+  --shadow:    0 4px 28px rgba(0,0,0,0.45);
+  --gold-pale: #111d3a;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family:'DM Sans',sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  transition: background var(--transition), color var(--transition);
+  line-height: 1.6;
+}
+
+/* ===== READING PROGRESS ===== */
+#progress-bar {
+  position:fixed; top:0; left:0; height:3px; width:0%;
+  background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  z-index:9999; transition: width 0.1s;
+}
+
+/* ===== CREDIT BAR ===== */
+.credit-bar {
+  background: var(--navy);
+  color: rgba(255,255,255,0.75);
+  font-size:0.7rem;
+  padding:5px 20px;
+  display:flex; flex-wrap:wrap;
+  justify-content:space-between; align-items:center;
+  gap:4px;
+  border-bottom:1px solid rgba(201,168,76,0.2);
+}
+.credit-bar strong { color: var(--gold-light); }
+.credit-bar a { color:var(--gold); text-decoration:none; }
+.credit-bar a:hover { text-decoration:underline; }
+.credit-sep { opacity:0.35; margin:0 6px; }
+
+/* ===== STICKY TIMER BAR ===== */
+.timer-bar {
+  position:sticky; top:0; z-index:1000;
+  background: linear-gradient(135deg, #0a1530 0%, var(--navy-mid) 100%);
+  border-bottom:2px solid var(--gold);
+  padding:10px 20px;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  box-shadow:0 3px 20px rgba(0,0,0,0.35);
+}
+
+.timer-left {
+  display:flex; align-items:center; gap:14px;
+}
+
+.timer-icon-wrap {
+  width:38px; height:38px;
+  background:rgba(201,168,76,0.12);
+  border:1px solid rgba(201,168,76,0.35);
+  border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.1rem;
+}
+
+.timer-info { line-height:1; }
+
+.timer-label {
+  font-family:'Syne',sans-serif;
+  font-size:0.6rem; font-weight:700;
+  letter-spacing:0.14em; text-transform:uppercase;
+  color: var(--gold); margin-bottom:3px;
+}
+
+#clock {
+  font-family:'Syne',sans-serif;
+  font-size:1.35rem; font-weight:800;
+  color:#fff;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:0.04em;
+}
+
+.timer-right {
+  display:flex; align-items:center; gap:8px;
+}
+
+/* Navigator */
+.nav-wrapper { position:relative; }
+
+.nav-btn {
+  background:rgba(201,168,76,0.12);
+  border:1px solid var(--gold);
+  color:var(--gold);
+  font-family:'Syne',sans-serif;
+  font-size:0.75rem; font-weight:700;
+  padding:8px 14px; border-radius:7px;
+  cursor:pointer; display:flex; align-items:center; gap:6px;
+  letter-spacing:0.05em; transition:background 0.2s;
+  white-space:nowrap;
+}
+.nav-btn:hover { background:rgba(201,168,76,0.25); }
+.nav-btn svg { transition: transform 0.2s; }
+.nav-btn.open svg { transform:rotate(180deg); }
+
+.nav-dropdown {
+  display:none; position:absolute; top:calc(100% + 6px); right:0;
+  background:var(--navy); border:1px solid var(--gold);
+  border-radius:10px; overflow:hidden; min-width:230px;
+  box-shadow:0 10px 40px rgba(0,0,0,0.5); z-index:200;
+}
+.nav-dropdown.open { display:block; animation:popIn 0.18s ease; }
+
+@keyframes popIn {
+  from { opacity:0; transform:translateY(-8px) scale(0.97); }
+  to   { opacity:1; transform:translateY(0) scale(1); }
+}
+
+.nav-dropdown a {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 16px;
+  color:rgba(255,255,255,0.8); text-decoration:none;
+  font-size:0.82rem; font-family:'DM Sans',sans-serif;
+  border-bottom:1px solid rgba(201,168,76,0.1);
+  transition:background 0.15s, color 0.15s;
+}
+.nav-dropdown a:last-child { border-bottom:none; }
+.nav-dropdown a:hover { background:rgba(201,168,76,0.15); color:var(--gold-light); }
+.nav-dropdown a span { font-size:0.85rem; }
+
+/* Dark toggle */
+.dark-toggle {
+  width:38px; height:38px;
+  background:rgba(201,168,76,0.1);
+  border:1px solid rgba(201,168,76,0.35);
+  color:var(--gold-light);
+  border-radius:8px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1rem; transition:background 0.2s;
+}
+.dark-toggle:hover { background:rgba(201,168,76,0.25); }
+
+/* ===== HERO ===== */
+.hero {
+  background: linear-gradient(135deg, #070d1f 0%, var(--navy) 50%, #172453 100%);
+  padding:88px 24px 72px;
+  text-align:center; position:relative; overflow:hidden;
+}
+
+.hero::before {
+  content:'';
+  position:absolute; inset:0;
+  background:
+    radial-gradient(ellipse 60% 60% at 20% 40%, rgba(201,168,76,0.07) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 80% at 80% 60%, rgba(36,58,110,0.6) 0%, transparent 70%);
+  pointer-events:none;
+}
+
+.hero-inner { position:relative; z-index:1; }
+
+.hero-tag {
+  display:inline-block;
+  background:rgba(201,168,76,0.12);
+  border:1px solid rgba(201,168,76,0.45);
+  color:var(--gold);
+  font-family:'Syne',sans-serif;
+  font-size:0.68rem; font-weight:700;
+  letter-spacing:0.2em; text-transform:uppercase;
+  padding:5px 18px; border-radius:100px; margin-bottom:22px;
+}
+
+.hero h1 {
+  font-family:'Syne',sans-serif;
+  font-size:clamp(2.5rem,6vw,4.2rem);
+  font-weight:800; color:#fff; line-height:1.1; margin-bottom:14px;
+}
+
+.hero h1 em {
+  font-style:normal; color:var(--gold);
+  background: linear-gradient(135deg, #c9a84c, #e8b84b);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+
+.hero p {
+  color:rgba(255,255,255,0.65);
+  font-size:1rem; max-width:520px;
+  margin:0 auto 36px; line-height:1.75;
+}
+
+.hero-badges {
+  display:flex; justify-content:center; flex-wrap:wrap; gap:10px;
+}
+
+.badge {
+  background:rgba(255,255,255,0.07);
+  border:1px solid rgba(255,255,255,0.14);
+  color:rgba(255,255,255,0.75);
+  padding:6px 16px; border-radius:100px;
+  font-size:0.76rem; font-family:'DM Sans',sans-serif;
+}
+
+/* ===== LAYOUT ===== */
+.container { max-width:980px; margin:0 auto; padding:0 22px; }
+
+.section { padding:68px 0; }
+
+.section-tag {
+  font-family:'Syne',sans-serif;
+  font-size:0.65rem; font-weight:700;
+  letter-spacing:0.2em; text-transform:uppercase;
+  color:var(--gold); margin-bottom:6px;
+}
+
+.section-title {
+  font-family:'Syne',sans-serif;
+  font-size:clamp(1.6rem,3vw,2.2rem);
+  font-weight:800; color:var(--text);
+  margin-bottom:8px; line-height:1.2;
+}
+
+.section-hr {
+  width:44px; height:3px;
+  background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  border-radius:2px; margin-bottom:32px;
+}
+
+/* ===== OUTCOMES ===== */
+.outcomes-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(260px,1fr));
+  gap:14px;
+}
+
+.outcome-card {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-left:4px solid var(--gold);
+  border-radius:0 10px 10px 0;
+  padding:20px 22px;
+  box-shadow:var(--shadow);
+  transition:transform 0.2s;
+  display:flex; gap:12px; align-items:flex-start;
+}
+.outcome-card:hover { transform:translateY(-2px); }
+
+.outcome-num {
+  font-family:'Syne',sans-serif;
+  font-size:1.4rem; font-weight:800;
+  color:var(--gold); opacity:0.3;
+  flex-shrink:0; line-height:1;
+  margin-top:2px;
+}
+
+.outcome-card p {
+  font-size:0.91rem; line-height:1.65; color:var(--text);
+}
+
+/* ===== DEFINITION SECTION ===== */
+.definition-box {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:32px;
+  box-shadow:var(--shadow);
+  margin-bottom:24px;
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:32px; align-items:center;
+}
+
+.def-text p {
+  font-size:0.95rem; line-height:1.75; color:var(--text); margin-bottom:14px;
+}
+.def-text p:last-child { margin-bottom:0; }
+
+.def-keyword {
+  background:var(--gold-pale);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:20px 24px; text-align:center;
+  flex-shrink:0; width:160px;
+}
+.def-keyword .big { font-family:'Syne',sans-serif; font-size:2.5rem; font-weight:800; color:var(--gold); }
+.def-keyword small { font-size:0.7rem; color:var(--muted); font-weight:500; display:block; margin-top:4px; }
+
+/* ===== ALGO CARDS ===== */
+.algo-card {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px; overflow:hidden;
+  box-shadow:var(--shadow); margin-bottom:48px;
+  transition:box-shadow 0.2s;
+}
+.algo-card:hover { box-shadow:0 8px 40px rgba(13,27,62,0.18); }
+
+.algo-header {
+  background: linear-gradient(135deg, #0a1530 0%, var(--navy-mid) 100%);
+  padding:28px 32px;
+  display:flex; align-items:center; gap:18px;
+}
+
+.algo-icon {
+  width:52px; height:52px; flex-shrink:0;
+  background:rgba(201,168,76,0.15);
+  border:1px solid rgba(201,168,76,0.4);
+  border-radius:12px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.4rem;
+}
+
+.algo-htext {}
+.algo-htext h2 {
+  font-family:'Syne',sans-serif;
+  font-size:1.5rem; font-weight:800; color:#fff;
+}
+.algo-htext .algo-sub {
+  font-size:0.72rem; color:rgba(255,255,255,0.45);
+  letter-spacing:0.1em; text-transform:uppercase;
+  margin-top:2px; font-family:'DM Sans',sans-serif;
+}
+
+.algo-body { padding:32px; }
+
+.algo-def {
+  background:var(--gold-pale);
+  border-left:4px solid var(--gold);
+  border-radius:0 8px 8px 0;
+  padding:16px 20px; margin-bottom:28px;
+  font-size:0.94rem; line-height:1.7; color:var(--text);
+  font-style:italic;
+}
+
+/* ===== CODE BLOCKS ===== */
+.code-section { margin-bottom:28px; }
+
+.code-section-title {
+  font-family:'Syne',sans-serif;
+  font-size:0.7rem; font-weight:700;
+  letter-spacing:0.14em; text-transform:uppercase;
+  color:var(--gold); margin-bottom:10px;
+}
+
+.code-block {
+  background:var(--code-bg);
+  border:1px solid rgba(201,168,76,0.18);
+  border-radius:12px; overflow:hidden;
+  position:relative;
+}
+
+.code-block pre {
+  padding:24px; margin:0; overflow-x:auto;
+  font-family:'Courier New',Courier,monospace;
+  font-size:0.855rem; line-height:1.75;
+  color:#dde4f5;
+}
+
+.copy-btn {
+  position:absolute; top:10px; right:10px;
+  background:rgba(201,168,76,0.12);
+  border:1px solid rgba(201,168,76,0.4);
+  color:var(--gold);
+  font-family:'Syne',sans-serif;
+  font-size:0.65rem; font-weight:700;
+  padding:4px 11px; border-radius:5px;
+  cursor:pointer; letter-spacing:0.06em;
+  transition:background 0.2s;
+}
+.copy-btn:hover { background:rgba(201,168,76,0.3); }
+.copy-btn.done { background:rgba(74,222,128,0.15); border-color:#4ade80; color:#4ade80; }
+
+/* Syntax highlight */
+.kw  { color:#c792ea; font-weight:600; }
+.fn  { color:#82aaff; }
+.st  { color:#c3e88d; }
+.cm  { color:#4a5568; font-style:italic; }
+.nm  { color:#f78c6c; }
+.op  { color:#89ddff; }
+.bi  { color:#ffcb6b; }
+
+/* ===== COMPLEXITY TABLE ===== */
+.cplx-wrap { margin-bottom:28px; }
+
+.cplx-label {
+  font-family:'Syne',sans-serif;
+  font-size:0.7rem; font-weight:700;
+  letter-spacing:0.14em; text-transform:uppercase;
+  color:var(--gold); margin-bottom:10px;
+}
+
+.cplx-table {
+  width:100%; border-collapse:collapse; font-size:0.85rem;
+  border-radius:10px; overflow:hidden;
+  border:1px solid var(--border);
+}
+
+.cplx-table th {
+  background: linear-gradient(135deg,#0a1530,var(--navy-mid));
+  color:var(--gold);
+  font-family:'Syne',sans-serif;
+  font-size:0.68rem; letter-spacing:0.1em;
+  text-transform:uppercase; padding:10px 16px; text-align:left;
+}
+
+.cplx-table td {
+  padding:10px 16px;
+  border-bottom:1px solid var(--border);
+  color:var(--text);
+}
+
+.cplx-table tr:last-child td { border-bottom:none; }
+.cplx-table tr:hover td { background:var(--gold-pale); }
+
+.tag-on { color:#4ade80; font-weight:600; }
+.tag-n2 { color:#f87171; font-weight:600; }
+.tag-nl { color:#facc15; font-weight:600; }
+
+/* ===== VISUALIZER ===== */
+.viz-wrap {
+  background:var(--code-bg);
+  border:1px solid rgba(201,168,76,0.2);
+  border-radius:12px; padding:24px; margin-bottom:28px;
+}
+
+.viz-top {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:16px; flex-wrap:wrap; gap:8px;
+}
+
+.viz-title {
+  font-family:'Syne',sans-serif;
+  font-size:0.7rem; font-weight:700;
+  letter-spacing:0.14em; text-transform:uppercase;
+  color:var(--gold);
+}
+
+.viz-status {
+  font-size:0.75rem; color:rgba(255,255,255,0.4);
+  font-family:'DM Sans',sans-serif;
+}
+
+.viz-bars {
+  display:flex; align-items:flex-end; gap:5px;
+  height:110px; margin-bottom:24px; padding:0 2px;
+}
+
+.bar {
+  flex:1; border-radius:4px 4px 0 0;
+  transition:height 0.35s cubic-bezier(.4,0,.2,1), background 0.25s;
+  position:relative; min-width:8px;
+}
+
+.bar-val {
+  position:absolute; top:-18px; width:100%;
+  text-align:center; font-size:0.62rem;
+  color:rgba(255,255,255,0.5);
+  font-family:'Syne',sans-serif; font-weight:700;
+}
+
+.bar-idle   { background: linear-gradient(to top, #c9a84c88, #e8b84b88); }
+.bar-active { background: linear-gradient(to top, #f87171, #fb923c); }
+.bar-pivot  { background: linear-gradient(to top, #a78bfa, #818cf8); }
+.bar-sorted { background: linear-gradient(to top, #4ade80, #86efac); }
+
+.viz-controls {
+  display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+}
+
+.viz-btn {
+  background:rgba(201,168,76,0.12);
+  border:1px solid rgba(201,168,76,0.4);
+  color:var(--gold);
+  font-family:'Syne',sans-serif;
+  font-size:0.72rem; font-weight:700;
+  padding:7px 15px; border-radius:7px;
+  cursor:pointer; letter-spacing:0.05em;
+  transition:background 0.2s, opacity 0.2s;
+}
+.viz-btn:hover:not(:disabled) { background:rgba(201,168,76,0.28); }
+.viz-btn:disabled { opacity:0.35; cursor:not-allowed; }
+.viz-btn.primary {
+  background:rgba(201,168,76,0.25); border-color:var(--gold-light);
+}
+
+.viz-speed {
+  background:none; border:1px solid rgba(255,255,255,0.15);
+  color:rgba(255,255,255,0.5);
+  font-family:'DM Sans',sans-serif;
+  font-size:0.72rem; padding:6px 10px; border-radius:6px;
+  cursor:pointer; margin-left:auto;
+}
+.viz-speed:hover { border-color:rgba(201,168,76,0.4); color:var(--gold); }
+
+/* ===== OTHER SORTS ===== */
+.other-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(270px,1fr));
+  gap:16px;
+}
+
+.other-card {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px; padding:24px;
+  box-shadow:var(--shadow);
+  transition:transform 0.2s, border-color 0.2s;
+}
+.other-card:hover { transform:translateY(-3px); border-color:var(--gold); }
+
+.other-card h3 {
+  font-family:'Syne',sans-serif;
+  font-size:1rem; font-weight:800;
+  color:var(--text); margin-bottom:10px;
+  display:flex; align-items:center; gap:10px;
+}
+
+.other-icon {
+  width:30px; height:30px;
+  background:rgba(201,168,76,0.12);
+  border:1px solid rgba(201,168,76,0.35);
+  border-radius:7px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:0.9rem; flex-shrink:0;
+}
+
+.other-card p { font-size:0.87rem; line-height:1.65; color:var(--muted); }
+
+/* ===== PYTHON SECTION ===== */
+.py-tabs {
+  display:flex; border-radius:10px 10px 0 0;
+  overflow:hidden; border:1px solid var(--border);
+  border-bottom:none; margin-bottom:0;
+}
+
+.tab-btn {
+  flex:1; background:var(--card);
+  border:none; padding:13px 20px;
+  font-family:'Syne',sans-serif;
+  font-size:0.78rem; font-weight:700;
+  color:var(--muted); cursor:pointer;
+  border-right:1px solid var(--border);
+  letter-spacing:0.05em; transition:background 0.2s, color 0.2s;
+}
+.tab-btn:last-child { border-right:none; }
+.tab-btn.active { background:var(--navy); color:var(--gold); }
+
+.tab-panel { display:none; }
+.tab-panel.active { display:block; }
+
+.py-card {
+  background:var(--card);
+  border:1px solid var(--border); border-top:none;
+  border-radius:0 0 14px 14px; padding:32px;
+  box-shadow:var(--shadow);
+}
+
+.param-table {
+  width:100%; border-collapse:collapse;
+  font-size:0.87rem; border-radius:10px; overflow:hidden;
+  border:1px solid var(--border); margin-bottom:24px;
+}
+.param-table th {
+  background:linear-gradient(135deg,#0a1530,var(--navy-mid));
+  color:var(--gold);
+  font-family:'Syne',sans-serif;
+  font-size:0.65rem; letter-spacing:0.12em;
+  text-transform:uppercase; padding:10px 14px; text-align:left;
+}
+.param-table td {
+  padding:10px 14px;
+  border-bottom:1px solid var(--border); color:var(--text);
+  vertical-align:top;
+}
+.param-table tr:last-child td { border-bottom:none; }
+.param-table code {
+  background:rgba(201,168,76,0.12); color:var(--gold);
+  padding:2px 7px; border-radius:4px;
+  font-family:'Courier New',monospace; font-size:0.82em;
+}
+
+/* ===== REFERENCES ===== */
+.refs-list { list-style:none; display:flex; flex-direction:column; gap:12px; }
+.refs-list li {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-left:4px solid var(--gold);
+  border-radius:0 10px 10px 0;
+  padding:14px 20px;
+  font-size:0.9rem; color:var(--text);
+  box-shadow:var(--shadow);
+  display:flex; align-items:center; gap:12px;
+}
+.refs-list li::before {
+  content:'📖'; font-size:1rem;
+}
+
+/* ===== FOOTER ===== */
+footer {
+  background: linear-gradient(135deg, #070d1f 0%, var(--navy) 100%);
+  border-top:2px solid var(--gold);
+  padding:48px 24px 28px;
+  text-align:center;
+}
+
+.footer-logo {
+  font-family:'Syne',sans-serif;
+  font-size:0.65rem; font-weight:700;
+  letter-spacing:0.2em; text-transform:uppercase;
+  color:var(--gold); margin-bottom:16px;
+}
+
+.footer-name {
+  font-family:'Syne',sans-serif;
+  font-size:1.5rem; font-weight:800;
+  color:#fff; margin-bottom:6px;
+}
+
+.footer-meta {
+  color:rgba(255,255,255,0.5);
+  font-size:0.82rem; line-height:2; margin-bottom:20px;
+}
+.footer-meta a { color:var(--gold); text-decoration:none; }
+.footer-meta a:hover { text-decoration:underline; }
+
+.footer-sep {
+  display:inline-block;
+  opacity:0.3; margin:0 8px;
+}
+
+.footer-copy {
+  color:rgba(255,255,255,0.2);
+  font-size:0.7rem; margin-top:20px;
+  padding-top:20px; border-top:1px solid rgba(255,255,255,0.08);
+}
+
+/* ===== REVEAL ANIMATION ===== */
+.reveal {
+  opacity:0; transform:translateY(28px);
+  transition:opacity 0.6s ease, transform 0.6s ease;
+}
+.reveal.visible { opacity:1; transform:translateY(0); }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width:640px) {
+  .credit-bar {
+    font-size:0.62rem; padding:4px 12px;
+    flex-direction:column; text-align:center; gap:2px;
+  }
+  .timer-bar { padding:8px 12px; }
+  #clock { font-size:1.1rem; }
+  .nav-btn span { display:none; }
+  .hero { padding:60px 16px 52px; }
+  .algo-header { padding:20px 18px; }
+  .algo-body { padding:20px 18px; }
+  .py-card { padding:20px 16px; }
+  .definition-box { grid-template-columns:1fr; }
+  .def-keyword { width:auto; text-align:left; }
+  .section { padding:44px 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- READING PROGRESS BAR -->
+<div id="progress-bar"></div>
+
+<!-- CREDIT BAR (TOP) -->
+<div class="credit-bar">
+  <span>
+    <strong>Kim Cedrick C. Villar</strong>
+    <span class="credit-sep">|</span>
+    BSIT / DASTRUC
+    <span class="credit-sep">|</span>
+    National University – Fairview
+    <span class="credit-sep">|</span>
+    Section: IT-252
+  </span>
+  <span>
+    April 12, 2025
+    <span class="credit-sep">|</span>
+    <a href="https://github.com/Ceddrickx" target="_blank">⚙ github.com/Ceddrickx</a>
+  </span>
+</div>
+
+<!-- STICKY TIMER BAR -->
+<div class="timer-bar">
+  <div class="timer-left">
+    <div class="timer-icon-wrap">⏱</div>
+    <div class="timer-info">
+      <div class="timer-label">Reviewing For</div>
+      <div id="clock">00:00:00</div>
+    </div>
+  </div>
+
+  <div class="timer-right">
+    <!-- Navigator -->
+    <div class="nav-wrapper">
+      <button class="nav-btn" id="navToggle" onclick="toggleNav()">
+        <span>Navigator</span>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="nav-dropdown" id="navDropdown">
+        <a href="#outcomes"><span>🎯</span> Learning Outcomes</a>
+        <a href="#what-is-sorting"><span>📖</span> What is Sorting?</a>
+        <a href="#bubble-sort"><span>🫧</span> Bubble Sort</a>
+        <a href="#selection-sort"><span>🔍</span> Selection Sort</a>
+        <a href="#merge-sort"><span>🔀</span> Merge Sort</a>
+        <a href="#insertion-sort"><span>📥</span> Insertion Sort</a>
+        <a href="#other-sorts"><span>⚡</span> Other Sorting Algorithms</a>
+        <a href="#python-sorting"><span>🐍</span> Sorting in Python</a>
+        <a href="#references"><span>📚</span> References</a>
+      </div>
+    </div>
+
+    <!-- Dark Mode Toggle -->
+    <button class="dark-toggle" id="darkToggle" onclick="toggleDark()" title="Toggle dark mode">🌙</button>
+  </div>
+</div>
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-tag">DASTRUC — Week 4</div>
+    <h1>Data Structures<br>& <em>Sorting Algorithms</em></h1>
+    <p>A comprehensive reviewer covering Bubble, Selection, Merge, and Insertion Sort — complete with Python implementations, visualizers, and complexity analysis.</p>
+    <div class="hero-badges">
+      <span class="badge">🫧 Bubble Sort</span>
+      <span class="badge">🔍 Selection Sort</span>
+      <span class="badge">🔀 Merge Sort</span>
+      <span class="badge">📥 Insertion Sort</span>
+      <span class="badge">🐍 Python Built-ins</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== LEARNING OUTCOMES ===== -->
+<section class="section" id="outcomes">
+  <div class="container">
+    <div class="reveal">
+      <p class="section-tag">Learning Outcomes</p>
+      <h2 class="section-title">What You Should Know</h2>
+      <div class="section-hr"></div>
+    </div>
+    <div class="outcomes-grid">
+      <div class="outcome-card reveal">
+        <div class="outcome-num">01</div>
+        <p>Explain the simple sorting algorithms — Bubble, Selection, and Insertion Sort — and describe how each works conceptually.</p>
+      </div>
+      <div class="outcome-card reveal">
+        <div class="outcome-num">02</div>
+        <p>Implement the simple sorting algorithms in Python, writing clean and correct code for each algorithm.</p>
+      </div>
+      <div class="outcome-card reveal">
+        <div class="outcome-num">03</div>
+        <p>Analyze and compare the running times of the simple sorting algorithms using Big-O notation and time complexity tables.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== WHAT IS SORTING ===== -->
+<section class="section" id="what-is-sorting" style="background:var(--card); border-top:1px solid var(--border); border-bottom:1px solid var(--border);">
+  <div class="container">
+    <div class="reveal">
+      <p class="section-tag">Foundation</p>
+      <h2 class="section-title">What is Sorting?</h2>
+      <div class="section-hr"></div>
+    </div>
+    <div class="definition-box reveal">
+      <div class="def-text">
+        <p>
+          <strong>Sorting</strong> is the process of arranging or ordering a collection of items such that each item and its successor satisfy a prescribed relationship.
+        </p>
+        <p>
+          The items can be simple values — such as integers and reals — or more complex types such as student records or dictionary entries. In either case, the ordering of the items is based on the value of a <strong>sort key</strong>.
+        </p>
+        <p>
+          The key is the value itself when sorting simple types, or it can be a specific component (or combination of components) when sorting complex types. We encounter sorting in everyday life: phone books, dictionaries, and indexes are all organized alphabetically to make finding entries much easier.
+        </p>
+      </div>
+      <div class="def-keyword">
+        <div class="big">A→Z</div>
+        <small>Sort Order</small>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== BUBBLE SORT ===== -->
+<section class="section" id="bubble-sort">
+  <div class="container">
+    <div class="reveal">
+      <p class="section-tag">Algorithm 01</p>
+      <h2 class="section-title">Sorting Algorithms</h2>
+      <div class="section-hr"></div>
+    </div>
+
+    <div class="algo-card reveal">
+      <div class="algo-header">
+        <div class="algo-icon">🫧</div>
+        <div class="algo-htext">
+          <h2>Bubble Sort</h2>
+          <div class="algo-sub">Compare &amp; Swap Adjacent Elements</div>
+        </div>
+      </div>
+      <div class="algo-body">
+        <div class="algo-def">
+          Rearranges values by iterating over the list multiple times, causing larger values to <strong>"bubble"</strong> to the top (or end) of the list. In each pass, adjacent elements are compared and swapped if they are out of order.
+        </div>
+
+        <!-- VISUALIZER -->
+        <div class="viz-wrap" id="bubble-viz">
+          <div class="viz-top">
+            <div class="viz-title">⚡ Live Visualizer — Bubble Sort</div>
+            <div class="viz-status" id="bubble-status">Press ▶ Start to begin</div>
+          </div>
+          <div class="viz-bars" id="bubble-bars"></div>
+          <div class="viz-controls">
+            <button class="viz-btn primary" onclick="startViz('bubble')">▶ Start</button>
+            <button class="viz-btn" onclick="stepViz('bubble')" id="bubble-step">⏭ Step</button>
+            <button class="viz-btn" onclick="resetViz('bubble')">↺ Reset</button>
+            <select class="viz-speed" id="bubble-speed">
+              <option value="600">Slow</option>
+              <option value="300" selected>Normal</option>
+              <option value="80">Fast</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- PYTHON CODE -->
+        <div class="code-section">
+          <div class="code-section-title">🐍 Python Implementation</div>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <pre><span class="kw">def</span> <span class="fn">bubble_sort</span>(arr):
+    <span class="cm"># Get the number of elements</span>
+    n = <span class="bi">len</span>(arr)
+
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(n):
+        swapped = <span class="bi">False</span>  <span class="cm"># Optimization flag</span>
+
+        <span class="cm"># Each pass places the next largest at position n-i-1</span>
+        <span class="kw">for</span> j <span class="kw">in</span> <span class="bi">range</span>(<span class="nm">0</span>, n - i - <span class="nm">1</span>):
+            <span class="kw">if</span> arr[j] <span class="op">></span> arr[j + <span class="nm">1</span>]:
+                <span class="cm"># Swap adjacent elements</span>
+                arr[j], arr[j + <span class="nm">1</span>] = arr[j + <span class="nm">1</span>], arr[j]
+                swapped = <span class="bi">True</span>
+
+        <span class="cm"># Early exit: already sorted</span>
+        <span class="kw">if not</span> swapped:
+            <span class="kw">break</span>
+
+    <span class="kw">return</span> arr
+
+
+<span class="cm"># ── Example Usage ──────────────────────────────────────</span>
+nums = [<span class="nm">64</span>, <span class="nm">34</span>, <span class="nm">25</span>, <span class="nm">12</span>, <span class="nm">22</span>, <span class="nm">11</span>, <span class="nm">90</span>]
+result = bubble_sort(nums.<span class="fn">copy</span>())
+
+<span class="bi">print</span>(<span class="st">"Original:"</span>, nums)    <span class="cm"># [64, 34, 25, 12, 22, 11, 90]</span>
+<span class="bi">print</span>(<span class="st">"Sorted:  "</span>, result)  <span class="cm"># [11, 12, 22, 25, 34, 64, 90]</span>
+
+
+<span class="cm"># ── Step-by-step trace ─────────────────────────────────</span>
+<span class="kw">def</span> <span class="fn">bubble_sort_verbose</span>(arr):
+    n = <span class="bi">len</span>(arr)
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(n):
+        <span class="kw">for</span> j <span class="kw">in</span> <span class="bi">range</span>(<span class="nm">0</span>, n - i - <span class="nm">1</span>):
+            <span class="kw">if</span> arr[j] <span class="op">></span> arr[j + <span class="nm">1</span>]:
+                arr[j], arr[j + <span class="nm">1</span>] = arr[j + <span class="nm">1</span>], arr[j]
+        <span class="bi">print</span>(<span class="st">f"Pass </span>{i+<span class="nm">1</span>}<span class="st">: </span>{arr}<span class="st">"</span>)
+    <span class="kw">return</span> arr
+
+bubble_sort_verbose([<span class="nm">5</span>, <span class="nm">3</span>, <span class="nm">8</span>, <span class="nm">1</span>, <span class="nm">4</span>])
+<span class="cm"># Pass 1: [3, 5, 1, 4, 8]</span>
+<span class="cm"># Pass 2: [3, 1, 4, 5, 8]</span>
+<span class="cm"># Pass 3: [1, 3, 4, 5, 8]</span>
+<span class="cm"># Pass 4: [1, 3, 4, 5, 8]</span></pre>
+          </div>
+        </div>
+
+        <!-- COMPLEXITY TABLE -->
+        <div class="cplx-wrap">
+          <div class="cplx-label">⚙ Time &amp; Space Complexity</div>
+          <table class="cplx-table">
+            <thead>
+              <tr><th>Case</th><th>Time</th><th>Space</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Best Case</td><td class="tag-on">O(n)</td><td>O(1)</td><td>Already sorted (with swapped flag)</td></tr>
+              <tr><td>Average Case</td><td class="tag-n2">O(n²)</td><td>O(1)</td><td>Random order</td></tr>
+              <tr><td>Worst Case</td><td class="tag-n2">O(n²)</td><td>O(1)</td><td>Reverse sorted order</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SELECTION SORT ===== -->
+    <div class="algo-card reveal" id="selection-sort">
+      <div class="algo-header">
+        <div class="algo-icon">🔍</div>
+        <div class="algo-htext">
+          <h2>Selection Sort</h2>
+          <div class="algo-sub">Find Minimum, Place at Front</div>
+        </div>
+      </div>
+      <div class="algo-body">
+        <div class="algo-def">
+          A simple sorting algorithm that sorts an array by <strong>repeatedly finding the minimum element</strong> from the unsorted portion and placing it at the beginning. With each pass, the sorted portion grows by one element.
+        </div>
+
+        <!-- VISUALIZER -->
+        <div class="viz-wrap" id="selection-viz">
+          <div class="viz-top">
+            <div class="viz-title">⚡ Live Visualizer — Selection Sort</div>
+            <div class="viz-status" id="selection-status">Press ▶ Start to begin</div>
+          </div>
+          <div class="viz-bars" id="selection-bars"></div>
+          <div class="viz-controls">
+            <button class="viz-btn primary" onclick="startViz('selection')">▶ Start</button>
+            <button class="viz-btn" onclick="stepViz('selection')" id="selection-step">⏭ Step</button>
+            <button class="viz-btn" onclick="resetViz('selection')">↺ Reset</button>
+            <select class="viz-speed" id="selection-speed">
+              <option value="600">Slow</option>
+              <option value="300" selected>Normal</option>
+              <option value="80">Fast</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- PYTHON CODE -->
+        <div class="code-section">
+          <div class="code-section-title">🐍 Python Implementation</div>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <pre><span class="kw">def</span> <span class="fn">selection_sort</span>(arr):
+    n = <span class="bi">len</span>(arr)
+
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(n):
+        <span class="cm"># Assume current index holds the minimum</span>
+        min_idx = i
+
+        <span class="cm"># Scan unsorted portion for actual minimum</span>
+        <span class="kw">for</span> j <span class="kw">in</span> <span class="bi">range</span>(i + <span class="nm">1</span>, n):
+            <span class="kw">if</span> arr[j] <span class="op"><</span> arr[min_idx]:
+                min_idx = j
+
+        <span class="cm"># Swap the found minimum with position i</span>
+        arr[i], arr[min_idx] = arr[min_idx], arr[i]
+
+    <span class="kw">return</span> arr
+
+
+<span class="cm"># ── Example Usage ──────────────────────────────────────</span>
+nums = [<span class="nm">64</span>, <span class="nm">25</span>, <span class="nm">12</span>, <span class="nm">22</span>, <span class="nm">11</span>]
+result = selection_sort(nums.<span class="fn">copy</span>())
+
+<span class="bi">print</span>(<span class="st">"Original:"</span>, nums)    <span class="cm"># [64, 25, 12, 22, 11]</span>
+<span class="bi">print</span>(<span class="st">"Sorted:  "</span>, result)  <span class="cm"># [11, 12, 22, 25, 64]</span>
+
+
+<span class="cm"># ── Trace: see which elements get swapped ──────────────</span>
+<span class="kw">def</span> <span class="fn">selection_sort_verbose</span>(arr):
+    n = <span class="bi">len</span>(arr)
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(n):
+        min_idx = i
+        <span class="kw">for</span> j <span class="kw">in</span> <span class="bi">range</span>(i + <span class="nm">1</span>, n):
+            <span class="kw">if</span> arr[j] <span class="op"><</span> arr[min_idx]:
+                min_idx = j
+        <span class="bi">print</span>(<span class="st">f"Swap arr[</span>{i}<span class="st">]={arr[i]} ↔ arr[</span>{min_idx}<span class="st">]={arr[min_idx]}"</span>)
+        arr[i], arr[min_idx] = arr[min_idx], arr[i]
+        <span class="bi">print</span>(<span class="st">f"  After: </span>{arr}<span class="st">"</span>)
+    <span class="kw">return</span> arr
+
+selection_sort_verbose([<span class="nm">29</span>, <span class="nm">10</span>, <span class="nm">14</span>, <span class="nm">37</span>, <span class="nm">13</span>])</pre>
+          </div>
+        </div>
+
+        <!-- COMPLEXITY -->
+        <div class="cplx-wrap">
+          <div class="cplx-label">⚙ Time &amp; Space Complexity</div>
+          <table class="cplx-table">
+            <thead>
+              <tr><th>Case</th><th>Time</th><th>Space</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Best Case</td><td class="tag-n2">O(n²)</td><td>O(1)</td><td>Must still scan entire unsorted portion</td></tr>
+              <tr><td>Average Case</td><td class="tag-n2">O(n²)</td><td>O(1)</td><td>Same regardless of input</td></tr>
+              <tr><td>Worst Case</td><td class="tag-n2">O(n²)</td><td>O(1)</td><td>Makes at most n−1 swaps (efficient!)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MERGE SORT ===== -->
+    <div class="algo-card reveal" id="merge-sort">
+      <div class="algo-header">
+        <div class="algo-icon">🔀</div>
+        <div class="algo-htext">
+          <h2>Merge Sort</h2>
+          <div class="algo-sub">Divide &amp; Conquer Recursion</div>
+        </div>
+      </div>
+      <div class="algo-body">
+        <div class="algo-def">
+          A <strong>divide-and-conquer algorithm</strong> that recursively divides the list into smaller sublists, sorts each half, and then merges them back together in sorted order. It guarantees O(n log n) performance in all cases.
+        </div>
+
+        <!-- VISUALIZER -->
+        <div class="viz-wrap" id="merge-viz">
+          <div class="viz-top">
+            <div class="viz-title">⚡ Live Visualizer — Merge Sort</div>
+            <div class="viz-status" id="merge-status">Press ▶ Start to begin</div>
+          </div>
+          <div class="viz-bars" id="merge-bars"></div>
+          <div class="viz-controls">
+            <button class="viz-btn primary" onclick="startViz('merge')">▶ Start</button>
+            <button class="viz-btn" onclick="stepViz('merge')" id="merge-step">⏭ Step</button>
+            <button class="viz-btn" onclick="resetViz('merge')">↺ Reset</button>
+            <select class="viz-speed" id="merge-speed">
+              <option value="600">Slow</option>
+              <option value="300" selected>Normal</option>
+              <option value="80">Fast</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- PYTHON CODE -->
+        <div class="code-section">
+          <div class="code-section-title">🐍 Python Implementation</div>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <pre><span class="kw">def</span> <span class="fn">merge_sort</span>(arr):
+    <span class="cm"># Base case: a single element is already sorted</span>
+    <span class="kw">if</span> <span class="bi">len</span>(arr) <span class="op"><=</span> <span class="nm">1</span>:
+        <span class="kw">return</span> arr
+
+    <span class="cm"># Divide: split at midpoint</span>
+    mid = <span class="bi">len</span>(arr) <span class="op">//</span> <span class="nm">2</span>
+    left  = merge_sort(arr[:mid])
+    right = merge_sort(arr[mid:])
+
+    <span class="cm"># Conquer: merge the sorted halves</span>
+    <span class="kw">return</span> <span class="fn">merge</span>(left, right)
+
+
+<span class="kw">def</span> <span class="fn">merge</span>(left, right):
+    <span class="st">"""Merge two sorted arrays into one sorted array."""</span>
+    result = []
+    i = j = <span class="nm">0</span>
+
+    <span class="cm"># Compare front elements of each half</span>
+    <span class="kw">while</span> i <span class="op"><</span> <span class="bi">len</span>(left) <span class="kw">and</span> j <span class="op"><</span> <span class="bi">len</span>(right):
+        <span class="kw">if</span> left[i] <span class="op"><=</span> right[j]:
+            result.<span class="fn">append</span>(left[i]);  i <span class="op">+=</span> <span class="nm">1</span>
+        <span class="kw">else</span>:
+            result.<span class="fn">append</span>(right[j]); j <span class="op">+=</span> <span class="nm">1</span>
+
+    <span class="cm"># Append remaining elements</span>
+    result.<span class="fn">extend</span>(left[i:])
+    result.<span class="fn">extend</span>(right[j:])
+    <span class="kw">return</span> result
+
+
+<span class="cm"># ── Example Usage ──────────────────────────────────────</span>
+nums = [<span class="nm">38</span>, <span class="nm">27</span>, <span class="nm">43</span>, <span class="nm">3</span>, <span class="nm">9</span>, <span class="nm">82</span>, <span class="nm">10</span>]
+result = merge_sort(nums)
+
+<span class="bi">print</span>(<span class="st">"Original:"</span>, nums)    <span class="cm"># [38, 27, 43, 3, 9, 82, 10]</span>
+<span class="bi">print</span>(<span class="st">"Sorted:  "</span>, result)  <span class="cm"># [3, 9, 10, 27, 38, 43, 82]</span>
+
+
+<span class="cm"># ── In-place version (more memory-efficient) ───────────</span>
+<span class="kw">def</span> <span class="fn">merge_sort_inplace</span>(arr, left=<span class="nm">0</span>, right=<span class="bi">None</span>):
+    <span class="kw">if</span> right <span class="kw">is</span> <span class="bi">None</span>:
+        right = <span class="bi">len</span>(arr) - <span class="nm">1</span>
+    <span class="kw">if</span> left <span class="op"><</span> right:
+        mid = (left + right) <span class="op">//</span> <span class="nm">2</span>
+        merge_sort_inplace(arr, left, mid)
+        merge_sort_inplace(arr, mid + <span class="nm">1</span>, right)
+        <span class="fn">merge_inplace</span>(arr, left, mid, right)
+
+<span class="kw">def</span> <span class="fn">merge_inplace</span>(arr, left, mid, right):
+    L = arr[left:mid+<span class="nm">1</span>]
+    R = arr[mid+<span class="nm">1</span>:right+<span class="nm">1</span>]
+    i = j = <span class="nm">0</span>; k = left
+    <span class="kw">while</span> i <span class="op"><</span> <span class="bi">len</span>(L) <span class="kw">and</span> j <span class="op"><</span> <span class="bi">len</span>(R):
+        <span class="kw">if</span> L[i] <span class="op"><=</span> R[j]: arr[k] = L[i]; i <span class="op">+=</span> <span class="nm">1</span>
+        <span class="kw">else</span>:            arr[k] = R[j]; j <span class="op">+=</span> <span class="nm">1</span>
+        k <span class="op">+=</span> <span class="nm">1</span>
+    <span class="kw">while</span> i <span class="op"><</span> <span class="bi">len</span>(L): arr[k] = L[i]; i <span class="op">+=</span> <span class="nm">1</span>; k <span class="op">+=</span> <span class="nm">1</span>
+    <span class="kw">while</span> j <span class="op"><</span> <span class="bi">len</span>(R): arr[k] = R[j]; j <span class="op">+=</span> <span class="nm">1</span>; k <span class="op">+=</span> <span class="nm">1</span></pre>
+          </div>
+        </div>
+
+        <!-- COMPLEXITY -->
+        <div class="cplx-wrap">
+          <div class="cplx-label">⚙ Time &amp; Space Complexity</div>
+          <table class="cplx-table">
+            <thead>
+              <tr><th>Case</th><th>Time</th><th>Space</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Best Case</td><td class="tag-nl">O(n log n)</td><td>O(n)</td><td>Consistent across all inputs</td></tr>
+              <tr><td>Average Case</td><td class="tag-nl">O(n log n)</td><td>O(n)</td><td>Stable sort — preserves order of equal keys</td></tr>
+              <tr><td>Worst Case</td><td class="tag-nl">O(n log n)</td><td>O(n)</td><td>Requires O(n) extra space</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== INSERTION SORT ===== -->
+    <div class="algo-card reveal" id="insertion-sort">
+      <div class="algo-header">
+        <div class="algo-icon">📥</div>
+        <div class="algo-htext">
+          <h2>Insertion Sort</h2>
+          <div class="algo-sub">Build Sorted Array One Element at a Time</div>
+        </div>
+      </div>
+      <div class="algo-body">
+        <div class="algo-def">
+          A simple sorting algorithm that builds the final sorted array <strong>one element at a time</strong>. It iterates through the array, comparing each element to the ones before it and inserting it into its correct position — much like sorting playing cards in your hand.
+        </div>
+
+        <!-- VISUALIZER -->
+        <div class="viz-wrap" id="insertion-viz">
+          <div class="viz-top">
+            <div class="viz-title">⚡ Live Visualizer — Insertion Sort</div>
+            <div class="viz-status" id="insertion-status">Press ▶ Start to begin</div>
+          </div>
+          <div class="viz-bars" id="insertion-bars"></div>
+          <div class="viz-controls">
+            <button class="viz-btn primary" onclick="startViz('insertion')">▶ Start</button>
+            <button class="viz-btn" onclick="stepViz('insertion')" id="insertion-step">⏭ Step</button>
+            <button class="viz-btn" onclick="resetViz('insertion')">↺ Reset</button>
+            <select class="viz-speed" id="insertion-speed">
+              <option value="600">Slow</option>
+              <option value="300" selected>Normal</option>
+              <option value="80">Fast</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- PYTHON CODE -->
+        <div class="code-section">
+          <div class="code-section-title">🐍 Python Implementation</div>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <pre><span class="kw">def</span> <span class="fn">insertion_sort</span>(arr):
+    <span class="cm"># Start from index 1 (first element is trivially sorted)</span>
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(<span class="nm">1</span>, <span class="bi">len</span>(arr)):
+        key = arr[i]  <span class="cm"># Element to be inserted</span>
+        j = i - <span class="nm">1</span>
+
+        <span class="cm"># Shift elements right until we find the correct position</span>
+        <span class="kw">while</span> j <span class="op">>=</span> <span class="nm">0</span> <span class="kw">and</span> arr[j] <span class="op">></span> key:
+            arr[j + <span class="nm">1</span>] = arr[j]
+            j <span class="op">-=</span> <span class="nm">1</span>
+
+        <span class="cm"># Insert key in its correct position</span>
+        arr[j + <span class="nm">1</span>] = key
+
+    <span class="kw">return</span> arr
+
+
+<span class="cm"># ── Example Usage ──────────────────────────────────────</span>
+nums = [<span class="nm">12</span>, <span class="nm">11</span>, <span class="nm">13</span>, <span class="nm">5</span>, <span class="nm">6</span>]
+result = insertion_sort(nums.<span class="fn">copy</span>())
+
+<span class="bi">print</span>(<span class="st">"Original:"</span>, nums)    <span class="cm"># [12, 11, 13, 5, 6]</span>
+<span class="bi">print</span>(<span class="st">"Sorted:  "</span>, result)  <span class="cm"># [5, 6, 11, 12, 13]</span>
+
+
+<span class="cm"># ── Verbose trace ──────────────────────────────────────</span>
+<span class="kw">def</span> <span class="fn">insertion_sort_verbose</span>(arr):
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(<span class="nm">1</span>, <span class="bi">len</span>(arr)):
+        key = arr[i]
+        j = i - <span class="nm">1</span>
+        <span class="bi">print</span>(<span class="st">f"Inserting key=</span>{key}<span class="st"> at position </span>{i}<span class="st">"</span>)
+        <span class="kw">while</span> j <span class="op">>=</span> <span class="nm">0</span> <span class="kw">and</span> arr[j] <span class="op">></span> key:
+            arr[j + <span class="nm">1</span>] = arr[j]
+            j <span class="op">-=</span> <span class="nm">1</span>
+        arr[j + <span class="nm">1</span>] = key
+        <span class="bi">print</span>(<span class="st">f"  Array: </span>{arr}<span class="st">"</span>)
+    <span class="kw">return</span> arr
+
+insertion_sort_verbose([<span class="nm">9</span>, <span class="nm">3</span>, <span class="nm">7</span>, <span class="nm">1</span>, <span class="nm">5</span>])
+<span class="cm"># Inserting key=3 at position 1</span>
+<span class="cm">#   Array: [3, 9, 7, 1, 5]</span>
+<span class="cm"># Inserting key=7 at position 2</span>
+<span class="cm">#   Array: [3, 7, 9, 1, 5]</span>
+<span class="cm"># Inserting key=1 at position 3</span>
+<span class="cm">#   Array: [1, 3, 7, 9, 5]</span>
+<span class="cm"># Inserting key=5 at position 4</span>
+<span class="cm">#   Array: [1, 3, 5, 7, 9]</span></pre>
+          </div>
+        </div>
+
+        <!-- COMPLEXITY -->
+        <div class="cplx-wrap">
+          <div class="cplx-label">⚙ Time &amp; Space Complexity</div>
+          <table class="cplx-table">
+            <thead>
+              <tr><th>Case</th><th>Time</th><th>Space</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Best Case</td><td class="tag-on">O(n)</td><td>O(1)</td><td>Already sorted (no shifts needed)</td></tr>
+              <tr><td>Average Case</td><td class="tag-n2">O(n²)</td><td>O(1)</td><td>Efficient for small or nearly sorted arrays</td></tr>
+              <tr><td>Worst Case</td><td class="tag-n2">O(n²)</td><td>O(1)</td><td>Reverse sorted order</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== OTHER SORTS ===== -->
+<section class="section" id="other-sorts" style="background:var(--card); border-top:1px solid var(--border); border-bottom:1px solid var(--border);">
+  <div class="container">
+    <div class="reveal">
+      <p class="section-tag">Beyond The Basics</p>
+      <h2 class="section-title">Other Sorting Algorithms</h2>
+      <div class="section-hr"></div>
+    </div>
+    <div class="other-grid">
+      <div class="other-card reveal">
+        <h3><div class="other-icon">⚡</div>Quick Sort</h3>
+        <p>Selects a <strong>pivot element</strong>, partitions the list around the pivot (elements smaller go left, larger go right), then recursively sorts the two sub-lists. Average time: O(n log n), Worst: O(n²).</p>
+      </div>
+      <div class="other-card reveal">
+        <h3><div class="other-icon">🏔</div>Heap Sort</h3>
+        <p>Creates a <strong>binary max-heap</strong> from the array, then repeatedly extracts the maximum element and adds it to the sorted portion. Guarantees O(n log n) time in all cases. In-place but not stable.</p>
+      </div>
+      <div class="other-card reveal">
+        <h3><div class="other-icon">🔢</div>Radix Sort</h3>
+        <p>Sorts elements based on their <strong>individual digits or characters</strong> — from least significant to most significant digit. Achieves linear O(nk) time, where k is the number of digits. Non-comparison based.</p>
+      </div>
+    </div>
+
+    <!-- Quick Python code for Other Sorts -->
+    <div class="reveal" style="margin-top:36px;">
+      <div class="code-section-title" style="color:var(--gold); font-family:'Syne',sans-serif; font-size:0.7rem; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; margin-bottom:10px;">🐍 Quick Sort — Python Implementation</div>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+        <pre><span class="kw">def</span> <span class="fn">quick_sort</span>(arr):
+    <span class="kw">if</span> <span class="bi">len</span>(arr) <span class="op"><=</span> <span class="nm">1</span>:
+        <span class="kw">return</span> arr
+
+    pivot = arr[<span class="bi">len</span>(arr) <span class="op">//</span> <span class="nm">2</span>]    <span class="cm"># Pick middle as pivot</span>
+    left   = [x <span class="kw">for</span> x <span class="kw">in</span> arr <span class="kw">if</span> x <span class="op"><</span>  pivot]
+    middle = [x <span class="kw">for</span> x <span class="kw">in</span> arr <span class="kw">if</span> x <span class="op">==</span> pivot]
+    right  = [x <span class="kw">for</span> x <span class="kw">in</span> arr <span class="kw">if</span> x <span class="op">></span>  pivot]
+
+    <span class="kw">return</span> quick_sort(left) + middle + quick_sort(right)
+
+
+<span class="cm"># In-place Quick Sort with Lomuto partition scheme</span>
+<span class="kw">def</span> <span class="fn">quick_sort_inplace</span>(arr, low=<span class="nm">0</span>, high=<span class="bi">None</span>):
+    <span class="kw">if</span> high <span class="kw">is</span> <span class="bi">None</span>:
+        high = <span class="bi">len</span>(arr) - <span class="nm">1</span>
+    <span class="kw">if</span> low <span class="op"><</span> high:
+        pi = <span class="fn">partition</span>(arr, low, high)
+        quick_sort_inplace(arr, low, pi - <span class="nm">1</span>)
+        quick_sort_inplace(arr, pi + <span class="nm">1</span>, high)
+
+<span class="kw">def</span> <span class="fn">partition</span>(arr, low, high):
+    pivot = arr[high]
+    i = low - <span class="nm">1</span>
+    <span class="kw">for</span> j <span class="kw">in</span> <span class="bi">range</span>(low, high):
+        <span class="kw">if</span> arr[j] <span class="op"><=</span> pivot:
+            i <span class="op">+=</span> <span class="nm">1</span>
+            arr[i], arr[j] = arr[j], arr[i]
+    arr[i + <span class="nm">1</span>], arr[high] = arr[high], arr[i + <span class="nm">1</span>]
+    <span class="kw">return</span> i + <span class="nm">1</span>
+
+
+<span class="cm"># ── Example ────────────────────────────────────────────</span>
+nums = [<span class="nm">10</span>, <span class="nm">7</span>, <span class="nm">8</span>, <span class="nm">9</span>, <span class="nm">1</span>, <span class="nm">5</span>]
+<span class="bi">print</span>(quick_sort(nums))              <span class="cm"># [1, 5, 7, 8, 9, 10]</span>
+quick_sort_inplace(nums); <span class="bi">print</span>(nums) <span class="cm"># [1, 5, 7, 8, 9, 10]</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== PYTHON SORTING ===== -->
+<section class="section" id="python-sorting">
+  <div class="container">
+    <div class="reveal">
+      <p class="section-tag">Python Built-ins</p>
+      <h2 class="section-title">Sorting in Python</h2>
+      <div class="section-hr"></div>
+    </div>
+
+    <div class="reveal">
+      <div class="py-tabs">
+        <button class="tab-btn active" onclick="switchTab('sort')">list.sort()</button>
+        <button class="tab-btn" onclick="switchTab('sorted')">sorted()</button>
+        <button class="tab-btn" onclick="switchTab('comparison')">Comparison</button>
+      </div>
+
+      <!-- .sort() TAB -->
+      <div class="tab-panel active" id="tab-sort">
+        <div class="py-card">
+          <p style="font-size:0.95rem; line-height:1.75; margin-bottom:22px; color:var(--text);">
+            <code style="background:rgba(201,168,76,0.12); color:var(--gold); padding:2px 8px; border-radius:4px; font-size:0.9em;">list.sort()</code> sorts the list <strong>in-place</strong> — the original list is modified and <code style="background:rgba(201,168,76,0.12); color:var(--gold); padding:2px 8px; border-radius:4px; font-size:0.9em;">None</code> is returned. It uses Python's <em>Timsort</em> algorithm (hybrid of Merge Sort and Insertion Sort).
+          </p>
+          <table class="param-table">
+            <thead>
+              <tr><th>Parameter</th><th>Required</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>key</code></td>
+                <td>Optional</td>
+                <td>A function that takes an element and returns a comparison value. Default compares elements directly.</td>
+              </tr>
+              <tr>
+                <td><code>reverse</code></td>
+                <td>Optional</td>
+                <td>Boolean. If <code>True</code>, sorts in descending order. Default is <code>False</code> (ascending).</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <pre><span class="cm"># ── list.sort() ────────────────────────────────────────</span>
+<span class="cm"># Signature: list.sort(key=None, reverse=False)</span>
+
+<span class="cm"># 1. Basic ascending sort (default)</span>
+fruits = [<span class="st">'banana'</span>, <span class="st">'apple'</span>, <span class="st">'cherry'</span>, <span class="st">'date'</span>]
+fruits.<span class="fn">sort</span>()
+<span class="bi">print</span>(fruits)  <span class="cm"># ['apple', 'banana', 'cherry', 'date']</span>
+
+<span class="cm"># 2. Descending order with reverse=True</span>
+numbers = [<span class="nm">3</span>, <span class="nm">1</span>, <span class="nm">4</span>, <span class="nm">1</span>, <span class="nm">5</span>, <span class="nm">9</span>, <span class="nm">2</span>]
+numbers.<span class="fn">sort</span>(reverse=<span class="bi">True</span>)
+<span class="bi">print</span>(numbers)  <span class="cm"># [9, 5, 4, 3, 2, 1, 1]</span>
+
+<span class="cm"># 3. Sort by key — string length</span>
+words = [<span class="st">'banana'</span>, <span class="st">'fig'</span>, <span class="st">'apple'</span>, <span class="st">'kiwi'</span>]
+words.<span class="fn">sort</span>(key=<span class="bi">len</span>)
+<span class="bi">print</span>(words)  <span class="cm"># ['fig', 'kiwi', 'apple', 'banana']</span>
+
+<span class="cm"># 4. Sort list of dictionaries by a field</span>
+students = [
+    {<span class="st">'name'</span>: <span class="st">'Alice'</span>, <span class="st">'grade'</span>: <span class="nm">88</span>},
+    {<span class="st">'name'</span>: <span class="st">'Bob'</span>,   <span class="st">'grade'</span>: <span class="nm">95</span>},
+    {<span class="st">'name'</span>: <span class="st">'Carol'</span>, <span class="st">'grade'</span>: <span class="nm">72</span>},
+]
+students.<span class="fn">sort</span>(key=<span class="kw">lambda</span> s: s[<span class="st">'grade'</span>], reverse=<span class="bi">True</span>)
+<span class="kw">for</span> s <span class="kw">in</span> students:
+    <span class="bi">print</span>(<span class="st">f"</span>{s[<span class="st">'name'</span>]}<span class="st">: </span>{s[<span class="st">'grade'</span>]}<span class="st">"</span>)
+<span class="cm"># Bob: 95 | Alice: 88 | Carol: 72</span>
+
+<span class="cm"># 5. Sort by multiple criteria</span>
+data = [(<span class="st">'Alice'</span>, <span class="nm">90</span>), (<span class="st">'Bob'</span>, <span class="nm">85</span>), (<span class="st">'Carol'</span>, <span class="nm">90</span>), (<span class="st">'Dave'</span>, <span class="nm">85</span>)]
+data.<span class="fn">sort</span>(key=<span class="kw">lambda</span> x: (-x[<span class="nm">1</span>], x[<span class="nm">0</span>]))  <span class="cm"># grade desc, name asc</span>
+<span class="bi">print</span>(data)
+<span class="cm"># [('Alice', 90), ('Carol', 90), ('Bob', 85), ('Dave', 85)]</span>
+
+<span class="cm"># ⚠ NOTE: .sort() returns None — the original list is modified</span>
+nums = [<span class="nm">3</span>, <span class="nm">1</span>, <span class="nm">2</span>]
+result = nums.<span class="fn">sort</span>()
+<span class="bi">print</span>(result)  <span class="cm"># None  ← NOT the sorted list!</span>
+<span class="bi">print</span>(nums)    <span class="cm"># [1, 2, 3]  ← original was modified</span></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- sorted() TAB -->
+      <div class="tab-panel" id="tab-sorted">
+        <div class="py-card">
+          <p style="font-size:0.95rem; line-height:1.75; margin-bottom:22px; color:var(--text);">
+            <code style="background:rgba(201,168,76,0.12); color:var(--gold); padding:2px 8px; border-radius:4px; font-size:0.9em;">sorted()</code> returns a <strong>new sorted list</strong> — the original iterable is <strong>not modified</strong>. Works on any iterable (lists, tuples, strings, dicts, generators).
+          </p>
+          <table class="param-table">
+            <thead>
+              <tr><th>Parameter</th><th>Required</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>iterable</code></td>
+                <td>Required</td>
+                <td>Any iterable object (list, tuple, string, dict, etc.) that you want to sort.</td>
+              </tr>
+              <tr>
+                <td><code>key</code></td>
+                <td>Optional</td>
+                <td>A function that takes an element and returns a comparison value. Default compares directly.</td>
+              </tr>
+              <tr>
+                <td><code>reverse</code></td>
+                <td>Optional</td>
+                <td>Boolean. If <code>True</code>, sorts in descending order. Default is <code>False</code>.</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <pre><span class="cm"># ── sorted() ───────────────────────────────────────────</span>
+<span class="cm"># Signature: sorted(iterable, key=None, reverse=False)</span>
+
+<span class="cm"># 1. Returns NEW list — original unchanged</span>
+nums = [<span class="nm">3</span>, <span class="nm">1</span>, <span class="nm">4</span>, <span class="nm">1</span>, <span class="nm">5</span>, <span class="nm">9</span>, <span class="nm">2</span>]
+sorted_nums = <span class="bi">sorted</span>(nums)
+<span class="bi">print</span>(<span class="st">"Original:"</span>, nums)        <span class="cm"># [3, 1, 4, 1, 5, 9, 2]</span>
+<span class="bi">print</span>(<span class="st">"New list:"</span>, sorted_nums)  <span class="cm"># [1, 1, 2, 3, 4, 5, 9]</span>
+
+<span class="cm"># 2. Works on ANY iterable</span>
+letters = (<span class="st">'z'</span>, <span class="st">'a'</span>, <span class="st">'m'</span>, <span class="st">'b'</span>)       <span class="cm"># tuple</span>
+<span class="bi">print</span>(<span class="bi">sorted</span>(letters))              <span class="cm"># ['a', 'b', 'm', 'z']</span>
+
+word = <span class="st">"python"</span>                        <span class="cm"># string</span>
+<span class="bi">print</span>(<span class="bi">sorted</span>(word))                  <span class="cm"># ['h', 'n', 'o', 'p', 't', 'y']</span>
+
+<span class="cm"># 3. Reverse sort</span>
+<span class="bi">print</span>(<span class="bi">sorted</span>(nums, reverse=<span class="bi">True</span>))  <span class="cm"># [9, 5, 4, 3, 2, 1, 1]</span>
+
+<span class="cm"># 4. Sort with key function</span>
+words = [<span class="st">'banana'</span>, <span class="st">'fig'</span>, <span class="st">'apple'</span>, <span class="st">'date'</span>]
+by_last_char = <span class="bi">sorted</span>(words, key=<span class="kw">lambda</span> w: w[-<span class="nm">1</span>])
+<span class="bi">print</span>(by_last_char)  <span class="cm"># ['banana', 'apple', 'date', 'fig']</span>
+
+<span class="cm"># 5. Sort tuples / complex structures</span>
+students = [(<span class="st">'Alice'</span>, <span class="nm">88</span>), (<span class="st">'Bob'</span>, <span class="nm">95</span>), (<span class="st">'Carol'</span>, <span class="nm">72</span>)]
+by_grade   = <span class="bi">sorted</span>(students, key=<span class="kw">lambda</span> s: s[<span class="nm">1</span>])
+by_name    = <span class="bi">sorted</span>(students, key=<span class="kw">lambda</span> s: s[<span class="nm">0</span>])
+<span class="bi">print</span>(<span class="st">"By grade:"</span>, by_grade)
+<span class="cm"># [('Carol', 72), ('Alice', 88), ('Bob', 95)]</span>
+<span class="bi">print</span>(<span class="st">"By name: "</span>, by_name)
+<span class="cm"># [('Alice', 88), ('Bob', 95), ('Carol', 72)]</span>
+
+<span class="cm"># 6. Sort dict keys or values</span>
+scores = {<span class="st">'Alice'</span>: <span class="nm">88</span>, <span class="st">'Bob'</span>: <span class="nm">95</span>, <span class="st">'Carol'</span>: <span class="nm">72</span>}
+<span class="bi">print</span>(<span class="bi">sorted</span>(scores))                          <span class="cm"># sort keys</span>
+<span class="bi">print</span>(<span class="bi">sorted</span>(scores, key=scores.<span class="fn">get</span>))          <span class="cm"># sort by value</span>
+<span class="bi">print</span>(<span class="bi">sorted</span>(scores.items(), key=<span class="kw">lambda</span> x: x[<span class="nm">1</span>])) <span class="cm"># items by value</span></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMPARISON TAB -->
+      <div class="tab-panel" id="tab-comparison">
+        <div class="py-card">
+          <table class="cplx-table" style="margin-bottom:28px;">
+            <thead>
+              <tr><th>Feature</th><th>list.sort()</th><th>sorted()</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Modifies original</td><td class="tag-n2">Yes (in-place)</td><td class="tag-on">No (returns new)</td></tr>
+              <tr><td>Return value</td><td><code style="color:var(--muted);">None</code></td><td>New sorted list</td></tr>
+              <tr><td>Works on</td><td>Lists only</td><td>Any iterable</td></tr>
+              <tr><td>Memory usage</td><td class="tag-on">More efficient</td><td>Uses extra memory</td></tr>
+              <tr><td>Algorithm</td><td colspan="2" style="text-align:center;">Both use Timsort — O(n log n)</td></tr>
+              <tr><td>Stable sort</td><td colspan="2" style="text-align:center; color:#4ade80; font-weight:600;">✓ Both are stable</td></tr>
+            </tbody>
+          </table>
+
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <pre><span class="cm"># ── When to use which ──────────────────────────────────</span>
+
+<span class="cm"># Use .sort() when you want to modify in-place</span>
+data = [<span class="nm">5</span>, <span class="nm">2</span>, <span class="nm">8</span>, <span class="nm">1</span>]
+data.<span class="fn">sort</span>()  <span class="cm"># data is now [1, 2, 5, 8]</span>
+
+<span class="cm"># Use sorted() when you need the original unchanged</span>
+data = [<span class="nm">5</span>, <span class="nm">2</span>, <span class="nm">8</span>, <span class="nm">1</span>]
+new_data = <span class="bi">sorted</span>(data)  <span class="cm"># data still [5, 2, 8, 1]</span>
+
+<span class="cm"># Use sorted() on non-list iterables</span>
+gen = (x**<span class="nm">2</span> <span class="kw">for</span> x <span class="kw">in</span> [<span class="nm">3</span>, <span class="nm">1</span>, <span class="nm">4</span>, <span class="nm">1</span>, <span class="nm">5</span>])
+<span class="bi">print</span>(<span class="bi">sorted</span>(gen))  <span class="cm"># [1, 1, 9, 16, 25]</span>
+
+<span class="cm"># Common: sort and keep both versions</span>
+original = [<span class="st">'banana'</span>, <span class="st">'apple'</span>, <span class="st">'cherry'</span>]
+sorted_v  = <span class="bi">sorted</span>(original)
+<span class="bi">print</span>(original)  <span class="cm"># ['banana', 'apple', 'cherry']</span>
+<span class="bi">print</span>(sorted_v)  <span class="cm"># ['apple', 'banana', 'cherry']</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== REFERENCES ===== -->
+<section class="section" id="references" style="background:var(--card); border-top:1px solid var(--border);">
+  <div class="container">
+    <div class="reveal">
+      <p class="section-tag">Sources</p>
+      <h2 class="section-title">References</h2>
+      <div class="section-hr"></div>
+    </div>
+    <ul class="refs-list reveal">
+      <li>Sorting HOW TO — Python 3.x Documentation (docs.python.org)</li>
+      <li>Python List sort() — Programiz (programiz.com)</li>
+      <li>Necaise, R. D. — <em>Data Structures and Algorithms Using Python</em>, Wiley</li>
+      <li>GeeksforGeeks — Sorting Algorithms (geeksforgeeks.org)</li>
+      <li>Wikipedia — Timsort, Merge Sort, Insertion Sort, Bubble Sort</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <div class="footer-logo">DASTRUC Reviewer — Week 4</div>
+  <div class="footer-name">Kim Cedrick C. Villar</div>
+  <div class="footer-meta">
+    BSIT <span class="footer-sep">·</span>
+    DASTRUC <span class="footer-sep">·</span>
+    Section IT-252<br>
+    National University – Fairview <span class="footer-sep">·</span>
+    April 12, 2025<br>
+    <a href="https://github.com/Ceddrickx" target="_blank">⚙ github.com/Ceddrickx</a>
+  </div>
+  <div class="footer-copy">Built for academic review purposes. Week 4 — Sorting Algorithms.</div>
+</footer>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+// ── TIMER ──────────────────────────────────────────────
+let startTime = Date.now();
+function updateClock() {
+  const diff = Math.floor((Date.now() - startTime) / 1000);
+  const h = String(Math.floor(diff / 3600)).padStart(2,'0');
+  const m = String(Math.floor((diff % 3600) / 60)).padStart(2,'0');
+  const s = String(diff % 60).padStart(2,'0');
+  document.getElementById('clock').textContent = `${h}:${m}:${s}`;
+}
+setInterval(updateClock, 1000);
+
+// ── READING PROGRESS ───────────────────────────────────
+window.addEventListener('scroll', () => {
+  const doc = document.documentElement;
+  const pct = (doc.scrollTop / (doc.scrollHeight - doc.clientHeight)) * 100;
+  document.getElementById('progress-bar').style.width = pct + '%';
+});
+
+// ── NAVIGATOR ──────────────────────────────────────────
+function toggleNav() {
+  const btn = document.getElementById('navToggle');
+  const dd  = document.getElementById('navDropdown');
+  btn.classList.toggle('open');
+  dd.classList.toggle('open');
+}
+
+document.addEventListener('click', (e) => {
+  const wrapper = document.querySelector('.nav-wrapper');
+  if (!wrapper.contains(e.target)) {
+    document.getElementById('navToggle').classList.remove('open');
+    document.getElementById('navDropdown').classList.remove('open');
+  }
+});
+
+document.querySelectorAll('.nav-dropdown a').forEach(a => {
+  a.addEventListener('click', () => {
+    document.getElementById('navToggle').classList.remove('open');
+    document.getElementById('navDropdown').classList.remove('open');
+  });
+});
+
+// ── DARK MODE ──────────────────────────────────────────
+function toggleDark() {
+  const html = document.documentElement;
+  const btn  = document.getElementById('darkToggle');
+  const isDark = html.dataset.theme === 'dark';
+  html.dataset.theme = isDark ? 'light' : 'dark';
+  btn.textContent = isDark ? '🌙' : '☀️';
+}
+
+// ── COPY CODE ──────────────────────────────────────────
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    btn.textContent = 'COPIED!';
+    btn.classList.add('done');
+    setTimeout(() => { btn.textContent = 'COPY'; btn.classList.remove('done'); }, 2000);
+  });
+}
+
+// ── TABS ───────────────────────────────────────────────
+function switchTab(id) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    const ids = ['sort','sorted','comparison'];
+    b.classList.toggle('active', ids[i] === id);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => {
+    p.classList.toggle('active', p.id === 'tab-' + id);
+  });
+}
+
+// ── SCROLL REVEAL ──────────────────────────────────────
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+// ── VISUALIZER ENGINE ──────────────────────────────────
+const VIZ_DATA = {
+  bubble:    { arr: [72,45,18,93,36,61,27,84], steps: [], stepIdx: 0, timer: null },
+  selection: { arr: [55,22,88,11,66,44,99,33], steps: [], stepIdx: 0, timer: null },
+  merge:     { arr: [38,12,75,29,54,8,67,41],  steps: [], stepIdx: 0, timer: null },
+  insertion: { arr: [64,35,19,78,46,23,91,57], steps: [], stepIdx: 0, timer: null },
+};
+
+function cloneArr(a) { return [...a]; }
+
+// Pre-generate steps for each algorithm
+function genBubbleSteps(arr) {
+  const a = cloneArr(arr), steps = [];
+  const n = a.length;
+  steps.push({ arr: cloneArr(a), active: [], sorted: [] });
+  let sortedFrom = n;
+  for (let i = 0; i < n; i++) {
+    let swapped = false;
+    for (let j = 0; j < n - i - 1; j++) {
+      steps.push({ arr: cloneArr(a), active: [j, j+1], sorted: range(sortedFrom, n) });
+      if (a[j] > a[j+1]) { [a[j], a[j+1]] = [a[j+1], a[j]]; swapped = true; }
+    }
+    sortedFrom--;
+    steps.push({ arr: cloneArr(a), active: [], sorted: range(sortedFrom, n) });
+    if (!swapped) break;
+  }
+  steps.push({ arr: cloneArr(a), active: [], sorted: range(0, n), done: true });
+  return steps;
+}
+
+function genSelectionSteps(arr) {
+  const a = cloneArr(arr), steps = [];
+  const n = a.length;
+  steps.push({ arr: cloneArr(a), active: [], sorted: [] });
+  for (let i = 0; i < n; i++) {
+    let min = i;
+    for (let j = i+1; j < n; j++) {
+      steps.push({ arr: cloneArr(a), active: [min, j], sorted: range(0, i) });
+      if (a[j] < a[min]) min = j;
+    }
+    [a[i], a[min]] = [a[min], a[i]];
+    steps.push({ arr: cloneArr(a), active: [], sorted: range(0, i+1) });
+  }
+  steps.push({ arr: cloneArr(a), active: [], sorted: range(0, n), done: true });
+  return steps;
+}
+
+function genMergeSteps(arr) {
+  const a = cloneArr(arr), steps = [];
+  steps.push({ arr: cloneArr(a), active: [], sorted: [] });
+  function ms(arr, l, r) {
+    if (l >= r) return;
+    const m = Math.floor((l+r)/2);
+    ms(arr, l, m);
+    ms(arr, m+1, r);
+    // merge
+    const L = arr.slice(l, m+1), R = arr.slice(m+1, r+1);
+    let i=0, j=0, k=l;
+    while (i < L.length && j < R.length) {
+      steps.push({ arr: cloneArr(arr), active: [k, l+i < m+1 ? l+i : m+1+j], sorted: [] });
+      if (L[i] <= R[j]) { arr[k++] = L[i++]; }
+      else              { arr[k++] = R[j++]; }
+    }
+    while (i < L.length) arr[k++] = L[i++];
+    while (j < R.length) arr[k++] = R[j++];
+    steps.push({ arr: cloneArr(arr), active: [], sorted: range(l, r+1) });
+  }
+  ms(a, 0, a.length-1);
+  steps.push({ arr: cloneArr(a), active: [], sorted: range(0, a.length), done: true });
+  return steps;
+}
+
+function genInsertionSteps(arr) {
+  const a = cloneArr(arr), steps = [];
+  const n = a.length;
+  steps.push({ arr: cloneArr(a), active: [], sorted: [0] });
+  for (let i=1; i<n; i++) {
+    let key = a[i], j = i-1;
+    steps.push({ arr: cloneArr(a), active: [i], sorted: range(0, i) });
+    while (j >= 0 && a[j] > key) {
+      a[j+1] = a[j]; j--;
+      steps.push({ arr: cloneArr(a), active: [j+1], sorted: range(0, i) });
+    }
+    a[j+1] = key;
+    steps.push({ arr: cloneArr(a), active: [], sorted: range(0, i+1) });
+  }
+  steps.push({ arr: cloneArr(a), active: [], sorted: range(0, n), done: true });
+  return steps;
+}
+
+function range(a, b) { const r=[]; for(let i=a;i<b;i++) r.push(i); return r; }
+
+const generators = {
+  bubble: genBubbleSteps,
+  selection: genSelectionSteps,
+  merge: genMergeSteps,
+  insertion: genInsertionSteps,
+};
+
+function initViz(name) {
+  const d = VIZ_DATA[name];
+  d.steps = generators[name](d.arr);
+  d.stepIdx = 0;
+  renderStep(name, d.steps[0]);
+  setStatus(name, 'Ready — ' + d.arr.join(', '));
+}
+
+function renderStep(name, step) {
+  const bars = document.getElementById(name + '-bars');
+  if (!bars || !step) return;
+  const maxVal = Math.max(...step.arr);
+  bars.innerHTML = step.arr.map((v, i) => {
+    let cls = 'bar bar-idle';
+    if (step.done) cls = 'bar bar-sorted';
+    else if (step.sorted && step.sorted.includes(i)) cls = 'bar bar-sorted';
+    else if (step.active && step.active.includes(i)) cls = 'bar bar-active';
+    const h = Math.round((v / maxVal) * 96);
+    return `<div class="${cls}" style="height:${h}px"><div class="bar-val">${v}</div></div>`;
+  }).join('');
+}
+
+function setStatus(name, msg) {
+  const el = document.getElementById(name + '-status');
+  if (el) el.textContent = msg;
+}
+
+function startViz(name) {
+  const d = VIZ_DATA[name];
+  if (d.timer) clearInterval(d.timer);
+  if (d.stepIdx >= d.steps.length) d.stepIdx = 0;
+  const speed = parseInt(document.getElementById(name + '-speed').value);
+  d.timer = setInterval(() => {
+    if (d.stepIdx >= d.steps.length) {
+      clearInterval(d.timer);
+      setStatus(name, '✅ Sorted! ' + d.steps[d.steps.length-1].arr.join(', '));
+      return;
+    }
+    renderStep(name, d.steps[d.stepIdx]);
+    setStatus(name, `Step ${d.stepIdx + 1} / ${d.steps.length}`);
+    d.stepIdx++;
+  }, speed);
+}
+
+function stepViz(name) {
+  const d = VIZ_DATA[name];
+  if (d.timer) { clearInterval(d.timer); d.timer = null; }
+  if (d.stepIdx >= d.steps.length) {
+    d.stepIdx = 0;
+    setStatus(name, 'Reset — press Step to begin');
+    renderStep(name, d.steps[0]);
+    return;
+  }
+  renderStep(name, d.steps[d.stepIdx]);
+  setStatus(name, d.steps[d.stepIdx].done
+    ? '✅ Sorted! ' + d.steps[d.stepIdx].arr.join(', ')
+    : `Step ${d.stepIdx + 1} / ${d.steps.length}`);
+  d.stepIdx++;
+}
+
+function resetViz(name) {
+  const d = VIZ_DATA[name];
+  if (d.timer) { clearInterval(d.timer); d.timer = null; }
+  d.stepIdx = 0;
+  renderStep(name, d.steps[0]);
+  setStatus(name, 'Reset — Press ▶ Start to begin');
+}
+
+// Init all visualizers on load
+window.addEventListener('load', () => {
+  ['bubble','selection','merge','insertion'].forEach(initViz);
+});
+</script>
+</body>
+</html>
